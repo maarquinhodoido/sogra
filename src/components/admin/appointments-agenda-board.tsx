@@ -73,6 +73,11 @@ type CancelModalState = {
   appointment: AgendaAppointment;
 } | null;
 
+const AGENDA_START_MINUTES = 9 * 60 + 30;
+const AGENDA_END_MINUTES = 22 * 60 + 30;
+const AGENDA_SLOT_MINUTES = 30;
+const AGENDA_ROW_HEIGHT = 20;
+
 function addDays(date: Date, amount: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + amount);
@@ -125,6 +130,14 @@ function combineDateAndSlot(date: Date, slot: string) {
   return value;
 }
 
+function formatSlotLabel(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60)
+    .toString()
+    .padStart(2, "0");
+  const minutes = (totalMinutes % 60).toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
 function toAppointmentDate(value: string) {
   const date = new Date(value);
   return date.toLocaleDateString("pt-PT", {
@@ -167,10 +180,19 @@ export function AppointmentsAgendaBoard({
 
   const selectedDateObject = useMemo(() => new Date(`${selectedDate}T00:00:00`), [selectedDate]);
 
+  const defaultTimeOffStart = useMemo(
+    () => toInputDateTimeLocal(combineDateAndSlot(selectedDateObject, "13:00")),
+    [selectedDateObject],
+  );
+  const defaultTimeOffEnd = useMemo(
+    () => toInputDateTimeLocal(combineDateAndSlot(selectedDateObject, "14:00")),
+    [selectedDateObject],
+  );
+
   const timeRows = useMemo(() => {
     const rows: string[] = [];
-    for (let hour = 9; hour <= 22; hour += 1) {
-      rows.push(`${String(hour).padStart(2, "0")}:30`);
+    for (let cursor = AGENDA_START_MINUTES; cursor < AGENDA_END_MINUTES; cursor += AGENDA_SLOT_MINUTES) {
+      rows.push(formatSlotLabel(cursor));
     }
     return rows;
   }, []);
@@ -270,7 +292,7 @@ export function AppointmentsAgendaBoard({
     const slotBounds = timeRows.map((slot) => {
       const start = combineDateAndSlot(selectedDateObject, slot);
       const end = new Date(start);
-      end.setHours(start.getHours() + 1, start.getMinutes(), 0, 0);
+      end.setMinutes(start.getMinutes() + AGENDA_SLOT_MINUTES);
       return { start, end };
     });
 
@@ -400,20 +422,20 @@ export function AppointmentsAgendaBoard({
 
         <p className="mb-3 text-sm text-muted">{formatDayLabel(selectedDateObject)}</p>
 
-        <div className="pb-2">
+        <div className="pb-1">
           <div className="overflow-hidden rounded-xl border border-line bg-white">
-            <div className="overflow-x-auto">
+            <div className="max-h-[62vh] overflow-auto">
               <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr>
-                    <th className="border-b border-line px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.14em] text-primary-strong">
+                    <th className="sticky top-0 z-10 border-b border-line bg-white px-2 py-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-strong">
                       Horário
                     </th>
                     {professionals.map((professional) => (
                       <th
                         key={professional.id}
                         title={professional.name}
-                        className="border-b border-l border-line px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-primary-strong"
+                        className="sticky top-0 z-10 border-b border-l border-line bg-white px-2 py-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-primary-strong"
                       >
                         <span className="block truncate">{professional.name}</span>
                       </th>
@@ -423,7 +445,7 @@ export function AppointmentsAgendaBoard({
                 <tbody>
                   {timeRows.map((slot, rowIndex) => (
                     <tr key={`row-${slot}`}>
-                      <td className="h-[66px] border-b border-line px-3 py-3 text-xs font-semibold text-foreground align-top sm:text-sm">
+                      <td className="border-b border-line px-2 py-1 text-[11px] font-semibold text-foreground align-top">
                         {slot}
                       </td>
                       {professionals.map((professional) => {
@@ -438,13 +460,13 @@ export function AppointmentsAgendaBoard({
                             <td
                               key={`${professional.id}-${slot}`}
                               rowSpan={cell.rowSpan}
-                              className="border-b border-l border-line px-2 py-1.5 align-top"
+                              className="border-b border-l border-line px-1 py-0.5 align-top"
                             >
                               <button
                                 type="button"
                                 onClick={() => setSelectedItem({ type: "appointment", payload: cell.appointment })}
-                                style={{ minHeight: `${cell.rowSpan * 66 - 12}px` }}
-                                className="h-full w-full rounded bg-primary-strong px-1.5 py-1 text-left text-[11px] font-semibold text-white"
+                                style={{ minHeight: `${cell.rowSpan * AGENDA_ROW_HEIGHT - 8}px` }}
+                                className="h-full w-full rounded bg-primary-strong px-1 py-0.5 text-left text-[10px] font-semibold text-white"
                               >
                                 <p className="truncate" title={cell.appointment.customerName}>{cell.appointment.customerName}</p>
                               </button>
@@ -457,13 +479,13 @@ export function AppointmentsAgendaBoard({
                             <td
                               key={`${professional.id}-${slot}`}
                               rowSpan={cell.rowSpan}
-                              className="border-b border-l border-line px-2 py-1.5 align-top"
+                              className="border-b border-l border-line px-1 py-0.5 align-top"
                             >
                               <button
                                 type="button"
                                 onClick={() => setSelectedItem({ type: "timeoff", payload: cell.timeOff })}
-                                style={{ minHeight: `${cell.rowSpan * 66 - 12}px` }}
-                                className="h-full w-full rounded bg-amber-50 px-1.5 py-1 text-left text-[10px] font-semibold text-amber-800"
+                                style={{ minHeight: `${cell.rowSpan * AGENDA_ROW_HEIGHT - 8}px` }}
+                                className="h-full w-full rounded bg-amber-50 px-1 py-0.5 text-left text-[10px] font-semibold text-amber-800"
                               >
                                 {cell.timeOff.title}
                               </button>
@@ -472,7 +494,7 @@ export function AppointmentsAgendaBoard({
                         }
 
                         return (
-                          <td key={`${professional.id}-${slot}`} className="border-b border-l border-line px-2 py-1.5" />
+                          <td key={`${professional.id}-${slot}`} className="border-b border-l border-line px-1 py-0.5" />
                         );
                       })}
                     </tr>
@@ -514,7 +536,7 @@ export function AppointmentsAgendaBoard({
                     type="time"
                     min="09:30"
                     max="22:30"
-                    step={900}
+                    step={1800}
                     defaultValue="09:30"
                     className="rounded-2xl border border-line bg-white px-4 py-3"
                     required
@@ -570,8 +592,8 @@ export function AppointmentsAgendaBoard({
                   ))}
                 </select>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <input name="startsAt" type="datetime-local" className="rounded-2xl border border-line bg-white px-4 py-3" required />
-                  <input name="endsAt" type="datetime-local" className="rounded-2xl border border-line bg-white px-4 py-3" required />
+                  <input name="startsAt" type="datetime-local" defaultValue={defaultTimeOffStart} className="rounded-2xl border border-line bg-white px-4 py-3" required />
+                  <input name="endsAt" type="datetime-local" defaultValue={defaultTimeOffEnd} className="rounded-2xl border border-line bg-white px-4 py-3" required />
                 </div>
                 <label className="flex items-center gap-2 text-sm text-muted">
                   <input name="isAllDay" type="checkbox" /> Dia inteiro
@@ -634,7 +656,7 @@ export function AppointmentsAgendaBoard({
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
               <input value={recordsQuery} onChange={(event) => { setRecordsPage(1); setRecordsQuery(event.target.value); }} placeholder="Pesquisar nome, email, serviço ou profissional" className="rounded-2xl border border-line bg-white px-4 py-3 xl:col-span-2" />
               <input value={recordsDate} onChange={(event) => { setRecordsPage(1); setRecordsDate(event.target.value); }} type="date" className="rounded-2xl border border-line bg-white px-4 py-3" />
-              <input value={recordsTime} onChange={(event) => { setRecordsPage(1); setRecordsTime(event.target.value); }} type="time" step={900} className="rounded-2xl border border-line bg-white px-4 py-3" />
+              <input value={recordsTime} onChange={(event) => { setRecordsPage(1); setRecordsTime(event.target.value); }} type="time" step={1800} className="rounded-2xl border border-line bg-white px-4 py-3" />
               <select value={recordsProfessionalId} onChange={(event) => { setRecordsPage(1); setRecordsProfessionalId(event.target.value); }} className="rounded-2xl border border-line bg-white px-4 py-3">
                 <option value="">Todas as funcionárias</option>
                 {professionals.map((professional) => (

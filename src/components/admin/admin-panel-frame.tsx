@@ -50,6 +50,7 @@ export function AdminPanelFrame({ children, sessionName, sessionRole, logoutActi
             onClick={(event) => event.stopPropagation()}
           >
             <AdminSidebar
+              key={`mobile-${pathname}`}
               className="h-full"
               sessionName={sessionName}
               sessionRole={sessionRole}
@@ -67,6 +68,7 @@ export function AdminPanelFrame({ children, sessionName, sessionRole, logoutActi
         )}
       >
         <AdminSidebar
+          key={`desktop-${pathname}`}
           className="h-full rounded-none border-y-0 border-l-0 border-r border-line/80"
           sessionName={sessionName}
           sessionRole={sessionRole}

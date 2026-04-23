@@ -209,8 +209,8 @@ export default async function HomePage() {
                     <Clock3 className="mr-2 inline h-4 w-4 text-primary-strong" /> Horário geral
                   </p>
                   <div className="space-y-2">
-                    {data.hours.map((hour) => (
-                      <div key={hour.weekday} className="flex items-center justify-between gap-4 border-b border-line pb-2">
+                      {data.hours.map((hour, index) => (
+                        <div key={`${hour.weekday}-${hour.opensAt}-${hour.closesAt}-${index}`} className="flex items-center justify-between gap-4 border-b border-line pb-2">
                         <span>{weekdayLabel(hour.weekday)}</span>
                         <span>{hour.isClosed ? "Fechado" : `${hour.opensAt} - ${hour.closesAt}`}</span>
                       </div>
